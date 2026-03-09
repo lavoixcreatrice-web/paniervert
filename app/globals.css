@@ -1,26 +1,106 @@
-@import "tailwindcss";
+'use client'
+import { useEffect, useRef } from 'react'
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+interface Producteur {
+  id: number
+  nom: string
+  ville: string
+  km: number
+  type: string
+  note: number
+  produits: number
+  lat: number
+  lng: number
+  emoji: string
+  desc: string
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+interface Props {
+  producteurs: Producteur[]
+  selectionne: number | null
+  onSelect: (id: number) => void
+  typeColors: Record<string, string>
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+export default function CarteLeafletFull({ producteurs, selectionne, onSelect, typeColors }: Props) {
+  const mapRef = useRef<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  useEffect(() => {
+    // Charger le CSS Leaflet via CDN
+    const existingLink = document.getElementById('leaflet-css')
+    if (!existingLink) {
+      const link = document.createElement('link')
+      link.id = 'leaflet-css'
+      link.rel = 'stylesheet'
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      document.head.appendChild(link)
+    }
+
+    if (typeof window === 'undefined') return
+    if (!containerRef.current) return
+
+    const L = require('leaflet')
+
+    if (mapRef.current) {
+      mapRef.current.remove()
+      mapRef.current = null
+    }
+
+    const map = L.map(containerRef.current, {
+      center: [45.29, -72.25],
+      zoom: 10,
+      zoomControl: true,
+    })
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map)
+
+    mapRef.current = map
+
+    producteurs.forEach(p => {
+      const color = typeColors[p.type] || '#4ade80'
+      const isSelected = p.id === selectionne
+
+      const svgIcon = L.divIcon({
+        html: `<div style="
+          width:${isSelected ? 48 : 38}px;
+          height:${isSelected ? 48 : 38}px;
+          background:${isSelected ? '#1a3a15' : 'white'};
+          border:3px solid ${isSelected ? '#f5e6c8' : color};
+          border-radius:50%;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:${isSelected ? 22 : 18}px;
+          box-shadow:0 3px 10px rgba(0,0,0,${isSelected ? 0.4 : 0.2});
+          cursor:pointer;
+        ">${p.emoji}</div>`,
+        className: '',
+        iconSize: [isSelected ? 48 : 38, isSelected ? 48 : 38],
+        iconAnchor: [isSelected ? 24 : 19, isSelected ? 24 : 19],
+      })
+
+      const marker = L.marker([p.lat, p.lng], { icon: svgIcon })
+        .addTo(map)
+        .on('click', () => onSelect(p.id))
+
+      marker.bindTooltip(`
+        <div style="font-family:system-ui;padding:4px 2px">
+          <div style="font-weight:700;color:#1a3a15;font-size:13px">${p.nom}</div>
+          <div style="color:#888;font-size:11px">${p.ville} · ${p.km} km · ⭐ ${p.note}</div>
+        </div>
+      `, { direction: 'top', offset: [0, -20] })
+    })
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
+  }, [producteurs, selectionne])
+
+  return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }
