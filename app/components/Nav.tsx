@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 
 interface NavProps {
-  page?: 'accueil' | 'carte' | 'producteurs' | 'panier' | 'dashboard' | 'inscription'
+page?: 'accueil' | 'carte' | 'producteurs' | 'panier' | 'dashboard' | 'inscription' | 'marche' | 'collecte' | 'connexion' | 'profil' | 'checkout'
 }
 
 export default function Nav({ page }: NavProps) {
