@@ -64,7 +64,7 @@ export default function CarteLeafletFull({ producteurs, selectionne, onSelect, t
 
       mapRef.current = map
 
-      producteurs.forEach(p => {
+      (producteurs || []).forEach(p => {
         const color = typeColors[p.type] || '#4ade80'
         const isSelected = p.id === selectionne
         const size = isSelected ? 48 : 38
